@@ -1,25 +1,21 @@
-import React, { useEffect, useState } from 'react'
-import { supabase } from './lib/supabase'
-import Auth from './components/Auth'
+// src/App.jsx
+import React from 'react'
 import Dashboard from './components/Dashboard'
 
 export default function App() {
-  const [session, setSession] = useState(null)
-  const [loading, setLoading] = useState(true)
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      {/* Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <h1 className="text-xl font-bold text-[var(--accent)]">Habiton</h1>
+        </div>
+      </header>
 
-  // in the app console
-  supabase.auth.getUser().then(({data}) => console.log('My uid:', data.user?.id, 'email:', data.user?.email))
-
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null)
-      setLoading(false)
-    })
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
-    return () => sub.subscription.unsubscribe()
-  }, [])
-
-  if (loading) return <div className="p-8">Loading…</div>
-  return session ? <Dashboard /> : <Auth />
+      {/* Main dashboard */}
+      <main className="max-w-5xl mx-auto px-4 py-6">
+        <Dashboard />
+      </main>
+    </div>
+  )
 }
