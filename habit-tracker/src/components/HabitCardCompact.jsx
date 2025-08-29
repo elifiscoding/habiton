@@ -166,14 +166,27 @@ export default function HabitCard({
 
       {/* metrics */}
       <div className="flex items-center justify-between gap-2">
-        <CompletionRing
-          pct={stat?.completion_rate_pct ?? 0}
-          count={stat?.done_days ?? 0}
-          size={32}
-          stroke={4}
-        />
+        <div className="flex items-center gap-2">
+          <CompletionRing
+            pct={stat?.completion_rate_pct ?? 0}
+            count={stat?.done_days ?? 0}
+            size={32}
+            stroke={4}
+          />
+
+          {/* 🔥 streak chip */}
+          <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px]">
+            <span aria-hidden>🔥</span>
+            <span>
+              {streaks ? (streaks.streak_current > 0 ? `${streaks.streak_current}d` : '-') : '-'}
+            </span>
+          </span>
+
+        </div>
+
         <WeekDots items={recent7} />
       </div>
+
 
       {/* ✅ Done button bottom-right */}
       <div className="flex justify-end">

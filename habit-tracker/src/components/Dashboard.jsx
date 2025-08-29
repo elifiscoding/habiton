@@ -45,10 +45,10 @@ export default function Dashboard() {
     setHabits(habits.map(h => h.id === id ? { ...h, ...changes } : h))
   }
   const updateHabitStat = (id, changes) => {
-  setStats(prev =>
-    prev.map(s => s.habit_id === id ? { ...s, ...changes } : s)
-  )
-}
+    setStats(prev =>
+      prev.map(s => s.habit_id === id ? { ...s, ...changes } : s)
+    )
+  }
 
   const deleteHabit = (id) => {
     setHabits(habits.filter(h => h.id !== id))
@@ -107,7 +107,6 @@ export default function Dashboard() {
                 onUpdateHabitStat={updateHabitStat}
                 onUpdateStreak={updateStreak}
               />
-
 
             ))}
             {!filtered.length && <div className="card-s text-gray-600">No habits match “{q}”.</div>}

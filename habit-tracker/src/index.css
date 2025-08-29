@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* === Compact UI helpers === */
 .container-slim { @apply max-w-6xl mx-auto px-3 md:px-4; }
 .header-bar     { @apply sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-gray-200; }
