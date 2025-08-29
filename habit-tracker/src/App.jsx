@@ -7,9 +7,9 @@ import Sidebar from "./components/layout/Sidebar";
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen">
+      <div className="flex app-bg">
         <Sidebar />
-        <div className="flex-1 bg-gray-50">
+        <div className="flex-1">
           <Routes>
             <Route path="/" element={<Navigate to="/habits" replace />} />
             <Route path="/habits" element={<Dashboard />} />

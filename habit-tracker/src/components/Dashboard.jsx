@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
 import HabitCard from "./HabitCardCompact"
+import HabitList from "./HabitList" 
 import AddHabitModal from "./AddHabitModal"
 
 export default function Dashboard() {
@@ -10,7 +11,18 @@ export default function Dashboard() {
   const [me, setMe] = useState({ id: "", email: "" })
   const [q, setQ] = useState("")
   const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false) // modal state
+  const [showModal, setShowModal] = useState(false)
+  const [view, setView] = useState("cards")   // ✅ add view state
+
+  const [dark, setDark] = useState(false)
+
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add("dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+    }
+  }, [dark])
 
   // load once on mount
   const load = async () => {
@@ -18,7 +30,10 @@ export default function Dashboard() {
     const { data: u } = await supabase.auth.getUser()
     setMe({ id: u?.user?.id ?? "", email: u?.user?.email ?? "" })
 
-    const { data: h } = await supabase.from("habits").select("*").order("created_at", { ascending: true })
+    const { data: h } = await supabase
+      .from("habits")
+      .select("*")
+      .order("created_at", { ascending: true })
     setHabits(h || [])
 
     const { data: s } = await supabase.from("v_habit_30d_stats").select("*")
@@ -29,9 +44,7 @@ export default function Dashboard() {
 
     setLoading(false)
   }
-  useEffect(() => {
-    load()
-  }, [])
+  useEffect(() => { load() }, [])
 
   // maps for stats/streaks
   const byHabit   = useMemo(() => new Map(stats.map(r => [r.habit_id, r])), [stats])
@@ -64,22 +77,32 @@ export default function Dashboard() {
       <div className="header-bar">
         <div className="container-slim py-2 flex items-center justify-between gap-4">
           <div className="text-lg font-semibold">Habiton</div>
-
           <div className="subtle">Welcome, {me.email}!</div>
-
           <div className="flex gap-2">
             <button className="btn-sm" onClick={load}>Refresh</button>
             <button className="btn-sm" onClick={() => supabase.auth.signOut()}>Sign out</button>
           </div>
+          <button
+            className="btn-sm"
+            onClick={() => setDark(!dark)}
+          >
+            {dark ? "🌙 Dark" : "☀️ Light"}
+          </button>
         </div>
       </div>
 
+      
+
       {/* main area */}
       <main className="container-slim py-4 space-y-3">
-        
-
-
+        {/* search + new habit */}
         <div className="card-s flex flex-wrap items-center gap-2">
+          <input
+            className="input-sm flex-1 min-w-[180px]"
+            placeholder="Search habits…"
+            value={q}
+            onChange={e => setQ(e.target.value)}
+          />
           <button
             className="btn-sm bg-blue-500 text-white hover:bg-blue-600 ml-auto"
             onClick={() => setShowModal(true)}
@@ -88,11 +111,26 @@ export default function Dashboard() {
           </button>
         </div>
 
-        
+        {/* view toggle */}
+        <div className="flex justify-end gap-2">
+          <button
+            className={`btn-sm ${view === "cards" ? "bg-gray-200" : ""}`}
+            onClick={() => setView("cards")}
+          >
+            🔲 Cards
+          </button>
+          <button
+            className={`btn-sm ${view === "list" ? "bg-gray-200" : ""}`}
+            onClick={() => setView("list")}
+          >
+            📋 List
+          </button>
+        </div>
 
+        {/* habits area */}
         {loading ? (
           <div className="card-s">Loading…</div>
-        ) : (
+        ) : view === "cards" ? (
           <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map(h => (
               <HabitCard
@@ -107,13 +145,32 @@ export default function Dashboard() {
                 onUpdateStreak={updateStreak}
               />
             ))}
-            {!filtered.length && <div className="card-s text-gray-600">No habits match “{q}”.</div>}
+            {!filtered.length && (
+              <div className="card-s text-gray-600">
+                No habits match “{q}”.
+              </div>
+            )}
           </section>
+        ) : (
+          <HabitList
+            habits={filtered}
+            stats={byHabit}
+            streaks={streakMap}
+            onUpdateHabit={updateHabit}
+            onDeleteHabit={deleteHabit}
+            onLog={logHabit}
+            onUpdateHabitStat={updateHabitStat}
+            onUpdateStreak={updateStreak}
+          />
         )}
       </main>
 
       {/* modal */}
-      <AddHabitModal open={showModal} onClose={() => setShowModal(false)} onAdded={load} />
+      <AddHabitModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        onAdded={load}
+      />
     </>
   )
 }
