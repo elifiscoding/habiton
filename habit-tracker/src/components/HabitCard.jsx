@@ -1,51 +1,70 @@
-import React, { useEffect, useRef, useState } from "react"
+// HabitCard.jsx
+import React, { useEffect, useRef, useState, useMemo } from "react"
 import clsx from "clsx"
 import { supabase } from "../lib/supabase"
-import { toISODate, todayLocal } from "../utils/dates"
+import { toLocalYMD, todayLocal } from "../utils/dates"
 import { Card, Button, Input, Badge, CompletionRing, WeekDots } from "./ui"
-import { useMarkToday } from "../hooks/useMarkToday"
+import { useMarkToday, LOCAL_OVERRIDES } from "../hooks/useMarkToday"
+import { currentStreakFromRecent } from "../utils/habitMetrics"
 
 export default function HabitCard({
   habit, stat, streaks,
   onUpdateHabit, onDeleteHabit, onLog,
   onUpdateHabitStat, onUpdateStreak
 }) {
-  const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(habit.title)
   const [description, setDescription] = useState(habit.description ?? "")
   const [icon, setIcon] = useState(habit.icon ?? "🏷️")
-  const [showDelete, setShowDelete] = useState(false)
-  const [flash, setFlash] = useState(false)
   const [recent7, setRecent7] = useState([])
+  const [flash, setFlash] = useState(false)
   const headerRef = useRef(null)
   const today = todayLocal()
 
-  // load last 7 logs for this habit
+  const isDoneToday = useMemo(
+    () => recent7.find(d => d.date === today && d.status === "done"),
+    [recent7, today]
+  )
+
+  // Load last 7 logs
   useEffect(() => {
     (async () => {
       const now = new Date()
       const start = new Date(now); start.setDate(now.getDate() - 6)
+
       const { data: u } = await supabase.auth.getUser()
       const uid = u?.user?.id
       if (!uid) return
-      const { data } = await supabase
+
+      const { data, error } = await supabase
         .from("habit_logs")
         .select("log_date,status")
         .eq("habit_id", habit.id)
         .eq("user_id", uid)
-        .gte("log_date", toISODate(start))
-        .lte("log_date", toISODate(now))
+        .gte("log_date", toLocalYMD(start))
+        .lte("log_date", toLocalYMD(now))
         .order("log_date", { ascending: true })
+
+      if (error) { console.error(error); return }
 
       const map = new Map((data || []).map(r => [r.log_date, r.status]))
       const days = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(now); d.setDate(now.getDate() - (6 - i))
-        return { date: toISODate(d), status: map.get(toISODate(d)) ?? null }
+        const key = toLocalYMD(d)
+        // prefer override if present
+      const local = LOCAL_OVERRIDES.get(`${habit.id}:${key}`)
+      let status
+      if (local === "done") status = "done"
+      else if (local === "undone") status = null
+      else status = map.get(key) ?? null
+        return { date: key, status }
       })
       setRecent7(days)
+
+      const nextStreak = currentStreakFromRecent(days, today)
+      onUpdateStreak?.(habit.id, nextStreak)
     })()
-  }, [habit.id])
+  }, [habit.id, onUpdateStreak, today])
 
   useEffect(() => {
     if (!editing) {
@@ -80,27 +99,38 @@ export default function HabitCard({
     if (error) alert(error.message)
   }
 
-  // centralized mark-today using hook
-  const { markToday } = useMarkToday({
+  const toggleActive = async () => {
+    const next = !habit.is_active
+    onUpdateHabit?.(habit.id, { is_active: next }) // optimistic
+    const { error } = await supabase
+      .from("habits")
+      .update({ is_active: next })
+      .eq("id", habit.id)
+    if (error) {
+      alert(error.message)
+      onUpdateHabit?.(habit.id, { is_active: habit.is_active }) // rollback
+    }
+  }
+
+  const { markToday, undoToday } = useMarkToday({
     getRecent: (hid) => hid === habit.id ? recent7 : [],
-    setRecent: (_hid, updater) => setRecent7(updater),
+    setRecent: (_hid, arr) => setRecent7(arr),
     getStat: () => stat,
-    getStreak: () => streaks,
     onUpdateStat: onUpdateHabitStat,
-    onUpdateStreak: onUpdateStreak,
+    onUpdateStreak: (_hid, next) => onUpdateStreak?.(habit.id, next),
     onLog,
-    setSaving,
     setFlash,
   })
 
   return (
-    <Card size="sm" className={clsx("relative space-y-2 transition", flash && "flash-success")}>
-      {/* hover delete hotspot */}
-      {/* delete (x) — CSS-only hover reveal */}
+    <Card size="sm" className={clsx(
+      "relative space-y-2 transition",
+      !habit.is_active && "opacity-60",
+      flash && "flash-success"
+    )}>
+      {/* delete (x) — hover reveal */}
       <div className="absolute right-1 top-1 group z-10">
-        {/* hover target area — keeps hover active while moving onto the button */}
         <div className="h-8 w-8 rounded-md"></div>
-
         <button
           type="button"
           aria-label="Delete habit"
@@ -118,7 +148,6 @@ export default function HabitCard({
           ×
         </button>
       </div>
-
 
       {/* header / edit */}
       <div
@@ -144,7 +173,13 @@ export default function HabitCard({
           </div>
         ) : (
           <div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="switch"
+                isActive={habit.is_active}
+                title={habit.is_active ? "Pause" : "Resume"}
+                onClick={toggleActive}
+              />
               <span>{icon}</span>
               <div className="font-semibold text-[13px] truncate">{habit.title}</div>
             </div>
@@ -172,16 +207,28 @@ export default function HabitCard({
         <WeekDots items={recent7} />
       </div>
 
-      {/* Done */}
-      <div className="flex justify-end">
-        <Button
-          size="sm"
-          variant="success"
-          onClick={() => markToday(habit.id)}
-          disabled={saving}
-        >
-          {saving ? "…" : "✅ Done"}
-        </Button>
+      {/* Done / Undo */}
+      <div className="flex justify-end gap-2">
+        {!isDoneToday ? (
+          <Button
+            size="sm"
+            variant="success"
+            onClick={() => habit.is_active && markToday(habit.id)}
+            disabled={!habit.is_active}
+            title={habit.is_active ? "Mark as done today" : "This habit is paused"}
+          >
+            ✅ Done
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="warning"
+            onClick={() => undoToday(habit.id)}
+            title="Undo today's completion"
+          >
+            ↩️ Undo
+          </Button>
+        )}
       </div>
     </Card>
   )

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { supabase } from "../lib/supabase"
-import { toISODate } from "../utils/dates"
+import { toLocalYMD } from "../utils/dates"
+
 
 /**
  * useRecentLogs: fetches recent 7-day logs for one or many habits.
@@ -17,6 +18,7 @@ export function useRecentLogs(habitIds = []) {
     ;(async () => {
       const now = new Date()
       const start = new Date(now); start.setDate(now.getDate() - 6)
+      
 
       const { data: u } = await supabase.auth.getUser()
       const uid = u?.user?.id
@@ -27,8 +29,8 @@ export function useRecentLogs(habitIds = []) {
         .select("habit_id, log_date, status")
         .in("habit_id", habitIds)
         .eq("user_id", uid)
-        .gte("log_date", toISODate(start))
-        .lte("log_date", toISODate(now))
+        .gte("log_date", toLocalYMD(start))
+        .lte("log_date", toLocalYMD(now))
         .order("log_date", { ascending: true })
 
       if (error) {
@@ -46,11 +48,12 @@ export function useRecentLogs(habitIds = []) {
         const days = Array.from({ length: 7 }, (_, i) => {
           const d = new Date(now)
           d.setDate(now.getDate() - (6 - i))
-          const key = toISODate(d)
+          const key = toLocalYMD(d)
           return { date: key, status: map.get(key) ?? null }
         })
         grouped.set(hid, days)
       }
+
 
       setRecentLogs(grouped)
     })()

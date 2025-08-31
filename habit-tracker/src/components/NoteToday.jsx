@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { todayLocal } from '../utils/dates'
+import { todayLocal, toLocalYMD } from "../utils/dates"
 
 export default function NoteToday({ habitId, defaultStatus='done', onSaved }) {
   const [open, setOpen] = useState(false)
