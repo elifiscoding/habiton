@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
-import HabitCard from "./HabitCardCompact"
+import HabitCard from "./HabitCard"
 import HabitList from "./HabitList" 
 import AddHabitModal from "./AddHabitModal"
+
+import { Button} from "../components/ui"
+
 
 export default function Dashboard() {
   const [habits, setHabits] = useState([])
@@ -103,12 +106,14 @@ export default function Dashboard() {
             value={q}
             onChange={e => setQ(e.target.value)}
           />
-          <button
-            className="btn-sm bg-blue-500 text-white hover:bg-blue-600 ml-auto"
+          <Button
+            size="sm"
+            variant="primary"
+            className="ml-auto"
             onClick={() => setShowModal(true)}
           >
             New Habit
-          </button>
+          </Button>
         </div>
 
         {/* view toggle */}

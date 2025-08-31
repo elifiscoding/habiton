@@ -1,11 +1,11 @@
-// local YYYY-MM-DD (avoids UTC shift)
-export function todayLocal() {
-  const now = new Date()
-  const tz = now.getTimezoneOffset() * 60000
-  return new Date(Date.now() - tz).toISOString().slice(0,10)
+// Returns YYYY-MM-DD in local time
+export function toISODate(d) {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
 }
 
-export function toISODate(d) {
-  const tz = d.getTimezoneOffset() * 60000
-  return new Date(d - tz).toISOString().slice(0,10)
+export function todayLocal() {
+  return toISODate(new Date())
 }

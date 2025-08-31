@@ -1,13 +1,14 @@
 import React, { useState } from "react"
 import { supabase } from "../lib/supabase"
+import IconPicker from "./ui/IconPicker"
+import { Button, Modal } from "../components/ui"
+
 
 export default function AddHabitModal({ open, onClose, onAdded }) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [icon, setIcon] = useState("🏷️")
   const [saving, setSaving] = useState(false)
-
-  if (!open) return null
 
   const save = async () => {
     if (!title.trim()) return
@@ -33,40 +34,40 @@ export default function AddHabitModal({ open, onClose, onAdded }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-96 p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Add New Habit</h2>
+    <Modal open={open} onClose={onClose} size="md">
+      <h2 className="title">Add New Habit</h2>
 
-        <input
-          className="input w-full"
-          placeholder="Title"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-        />
-        <input
-          className="input w-full"
-          placeholder="Description (optional)"
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-        />
-        <input
-          className="input w-full"
-          placeholder="Icon (emoji)"
-          value={icon}
-          onChange={e => setIcon(e.target.value)}
-        />
+      <input
+        className="input w-full"
+        placeholder="Title"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+      />
+      <input
+        className="input w-full"
+        placeholder="Description (optional)"
+        value={description}
+        onChange={e => setDescription(e.target.value)}
+      />
 
-        <div className="flex justify-end gap-2">
-          <button className="btn-sm" onClick={onClose}>Cancel</button>
-          <button
-            className={`btn-sm ${saving ? "bg-gray-300" : "bg-green-500 text-white hover:bg-green-600"}`}
-            onClick={save}
-            disabled={saving}
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
-        </div>
+      <div>
+        <label className="subtle block mb-1">Choose Icon</label>
+        <IconPicker value={icon} onChange={setIcon} />
       </div>
-    </div>
+
+      <div className="flex justify-end gap-2">
+        <Button size="sm" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          variant="success"
+          onClick={save}
+          disabled={saving}
+        >
+          {saving ? "Saving..." : "Save"}
+        </Button>
+      </div>
+    </Modal>
   )
 }

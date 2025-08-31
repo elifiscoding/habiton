@@ -1,11 +1,19 @@
+import theme from "./src/theme.js"
+
 export default {
-  darkMode: 'class', // ✅ add this line for dark mode
-  content: [
-    "./index.html",
-    "./src/**/*.{js,jsx,ts,tsx}",
-  ],
+  darkMode: "class",
+  content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: theme.colors.primary.base,
+        success: theme.colors.success.base,
+        danger: theme.colors.danger.base,
+        warning: theme.colors.warning.base,
+      },
+      borderRadius: theme.radii,
+      spacing: theme.spacing,
+    },
   },
   plugins: [],
 }

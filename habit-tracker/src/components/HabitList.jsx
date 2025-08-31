@@ -1,21 +1,40 @@
 import React from "react"
-import CompletionRing from "../Elements/CompletionRing"
+import { Button, Badge, CompletionRing } from "./ui"
+import { useMarkToday } from "../hooks/useMarkToday"
+import { useRecentLogs } from "../hooks/useRecetLogs"
 
 export default function HabitList({
   habits,
-  stats,
-  streaks,
-  onUpdateHabit,
-  onDeleteHabit,
+  stats,     // Map<hid, stat>
+  streaks,   // Map<hid, streak>
   onLog,
   onUpdateHabitStat,
   onUpdateStreak
 }) {
+  const [recentLogs, setRecentLogs] = useRecentLogs(habits.map(h => h.id))
+
+  const { markToday } = useMarkToday({
+    getRecent: (hid) => recentLogs.get(hid) || [],
+    setRecent: (hid, updater) => {
+      setRecentLogs(prev => {
+        const newMap = new Map(prev)
+        const updated = updater(prev.get(hid) || [])
+        newMap.set(hid, updated)
+        return newMap
+      })
+    },
+    getStat: (hid) => stats.get(hid),
+    getStreak: (hid) => streaks.get(hid),
+    onUpdateStat: onUpdateHabitStat,
+    onUpdateStreak: onUpdateStreak,
+    onLog,
+  })
+
   return (
     <div className="card-s overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left border-b">
+          <tr className="text-left border-b dark:border-gray-700">
             <th className="p-2">Habit</th>
             <th className="p-2">Streak</th>
             <th className="p-2">30d %</th>
@@ -27,12 +46,17 @@ export default function HabitList({
             const stat = stats.get(h.id)
             const st = streaks.get(h.id)
             return (
-              <tr key={h.id} className="border-b last:border-0">
+              <tr key={h.id} className="border-b last:border-0 dark:border-gray-700">
                 <td className="p-2 flex items-center gap-2">
                   <span>{h.icon || "🏷️"}</span>
-                  <span>{h.title}</span>
+                  <span className="font-medium">{h.title}</span>
                 </td>
-                <td className="p-2">{st?.streak_current || "-"}</td>
+                <td className="p-2">
+                  <Badge>
+                    <span aria-hidden>🔥</span>
+                    <span>{st ? (st.streak_current > 0 ? `${st.streak_current}d` : "-") : "-"}</span>
+                  </Badge>
+                </td>
                 <td className="p-2">
                   <CompletionRing
                     pct={stat?.completion_rate_pct ?? 0}
@@ -42,15 +66,13 @@ export default function HabitList({
                   />
                 </td>
                 <td className="p-2 text-right">
-                  <button
-                    className="btn-sm bg-green-500 text-white hover:bg-green-600"
-                    onClick={() => {
-                      // reuse same markToday logic you used in HabitCard
-                      onLog?.(h.id, { status: "done", date: new Date().toISOString().split("T")[0] })
-                    }}
+                  <Button
+                    size="sm"
+                    variant="success"
+                    onClick={() => markToday(h.id)}
                   >
                     ✅ Done
-                  </button>
+                  </Button>
                 </td>
               </tr>
             )
