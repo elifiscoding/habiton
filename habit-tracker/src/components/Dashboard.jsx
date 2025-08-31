@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
 import HabitCard from "./HabitCard"
-import HabitList from "./HabitList" 
 import AddHabitModal from "./AddHabitModal"
 
 import { Button} from "../components/ui"
@@ -135,7 +134,7 @@ export default function Dashboard() {
         {/* habits area */}
         {loading ? (
           <div className="card-s">Loading…</div>
-        ) : view === "cards" ? (
+        ) : (
           <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map(h => (
               <HabitCard
@@ -156,17 +155,6 @@ export default function Dashboard() {
               </div>
             )}
           </section>
-        ) : (
-          <HabitList
-            habits={filtered}
-            stats={byHabit}
-            streaks={streakMap}
-            onUpdateHabit={updateHabit}
-            onDeleteHabit={deleteHabit}
-            onLog={logHabit}
-            onUpdateHabitStat={updateHabitStat}
-            onUpdateStreak={updateStreak}
-          />
         )}
       </main>
 

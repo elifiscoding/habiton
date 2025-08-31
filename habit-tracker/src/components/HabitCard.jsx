@@ -7,6 +7,9 @@ import { Card, Button, Input, Badge, CompletionRing, WeekDots } from "./ui"
 import { useMarkToday, LOCAL_OVERRIDES } from "../hooks/useMarkToday"
 import { currentStreakFromRecent } from "../utils/habitMetrics"
 
+import HabitEditor from "./editors/HabitEditor"
+
+
 export default function HabitCard({
   habit, stat, streaks,
   onUpdateHabit, onDeleteHabit, onLog,
@@ -155,40 +158,41 @@ export default function HabitCard({
         className="flex-1 min-w-0 pr-8 cursor-default"
         onDoubleClick={() => setEditing(true)}
       >
-        {editing ? (
-          <div className="space-y-1">
-            <Input
-              size="sm"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && saveEdit()}
-              autoFocus
+        <div className="flex items-center gap-2">
+          {/* Toggle is always fixed on the left */}
+          <Button
+            variant="switch"
+            isActive={habit.is_active}
+            title={habit.is_active ? "Pause" : "Resume"}
+            onClick={toggleActive}
+          />
+
+          {/* Editable block: icon + title */}
+          {editing ? (
+            <HabitEditor
+              habit={habit}
+              onSave={(changes) => {
+                setEditing(false)
+                onUpdateHabit?.(habit.id, changes)
+              }}
+              onCancel={() => setEditing(false)}
             />
-            <Input
-              size="sm"
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Description"
-            />
-          </div>
-        ) : (
-          <div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="switch"
-                isActive={habit.is_active}
-                title={habit.is_active ? "Pause" : "Resume"}
-                onClick={toggleActive}
-              />
+          ) : (
+            <div className="flex items-center gap-2 flex-1">
               <span>{icon}</span>
-              <div className="font-semibold text-[13px] truncate">{habit.title}</div>
+              <div className="font-semibold text-[13px] truncate">
+                {habit.title}
+              </div>
             </div>
-            {habit.description && (
-              <div className="subtle text-sm truncate">{habit.description}</div>
-            )}
-          </div>
+          )}
+        </div>
+
+        {/* Description always below */}
+        {!editing && habit.description && (
+          <div className="subtle text-sm truncate mt-1">{habit.description}</div>
         )}
       </div>
+
 
       {/* metrics */}
       <div className="flex items-center justify-between gap-2">
