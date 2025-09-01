@@ -1,7 +1,7 @@
 import React, { useState } from "react"
-import { supabase } from "../lib/supabase"
-import IconPicker from "./ui/IconPicker"
-import { Button, Modal } from "../components/ui"
+import { supabase } from "../../lib/supabase"
+import IconPicker from "../ui/IconPicker"
+import { Button, Modal } from "../ui"
 
 
 export default function AddHabitModal({ open, onClose, onAdded }) {

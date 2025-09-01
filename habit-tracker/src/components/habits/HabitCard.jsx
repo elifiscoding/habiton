@@ -1,13 +1,13 @@
 // HabitCard.jsx
 import React, { useEffect, useRef, useState, useMemo } from "react"
 import clsx from "clsx"
-import { supabase } from "../lib/supabase"
-import { toLocalYMD, todayLocal } from "../utils/dates"
-import { Card, Button, Input, Badge, CompletionRing, WeekDots } from "./ui"
-import { useMarkToday, LOCAL_OVERRIDES } from "../hooks/useMarkToday"
-import { currentStreakFromRecent } from "../utils/habitMetrics"
+import { supabase } from "../../lib/supabase"
+import { toLocalYMD, todayLocal } from "../../utils/dates"
+import { Card, Button, Input, Badge, CompletionRing, WeekDots } from "../ui"
+import { useMarkToday, LOCAL_OVERRIDES } from "../../hooks/useMarkToday"
+import { currentStreakFromRecent } from "../../utils/habitMetrics"
 
-import HabitEditor from "./editors/HabitEditor"
+import HabitEditor from "./HabitEditor"
 
 
 export default function HabitCard({

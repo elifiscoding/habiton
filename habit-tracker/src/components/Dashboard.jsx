@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
-import HabitCard from "./HabitCard"
-import AddHabitModal from "./AddHabitModal"
+import HabitCard from "./habits/HabitCard"
+import AddHabitModal from "./habits/AddHabitModal"
 
 import { Button} from "../components/ui"
 
