@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react"
-import { supabase } from "../lib/supabase"
-import HabitCard from "./habits/HabitCard"
-import AddHabitModal from "./habits/AddHabitModal"
+import { supabase } from "../../lib/supabase"
+import HabitCard from "../habits/HabitCard"
+import AddHabitModal from "../habits/AddHabitModal"
 
-import { Button} from "../components/ui"
+import { Button} from "../ui"
 
 
 export default function Dashboard() {

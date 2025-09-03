@@ -1,42 +1,51 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react"
 
-const frequencies = ["daily", "weekly", "monthly"];
-const periods = ["daily", "weekly", "monthly"];
+const frequencies = ["daily", "weekly", "monthly"]
+const periods = ["daily", "weekly", "monthly"]
 
 function CategorySelect({ categories, value, onChange }) {
   return (
-    <select value={value || ""} onChange={(e) => onChange(e.target.value || null)}>
+    <select
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value || null)}
+      className="border rounded p-2"
+    >
       <option value="">No category</option>
-      {categories.map(c => (
-        <option key={c.id} value={c.id}>{c.name}</option>
+      {categories.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.name}
+        </option>
       ))}
     </select>
-  );
+  )
 }
 
 export default function AddHabit({ categories, onAdd }) {
-  const [title, setTitle] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [frequency, setFrequency] = useState("daily");
-  const [goalPeriod, setGoalPeriod] = useState("monthly");
-  const [goalTarget, setGoalTarget] = useState(20);
+  const [title, setTitle] = useState("")
+  const [categoryId, setCategoryId] = useState(null)
+  const [frequency, setFrequency] = useState("daily")
+  const [goalPeriod, setGoalPeriod] = useState("monthly")
+  const [goalTarget, setGoalTarget] = useState(20)
 
-  const disabled = useMemo(() => title.trim().length === 0, [title]);
+  const disabled = useMemo(() => title.trim().length === 0, [title])
 
   async function handleAdd() {
-    if (disabled) return;
+    if (disabled) return
+
     await onAdd({
       title: title.trim(),
-      category_id: categoryId || null,
+      category_id: categoryId, // ✅ passes null if "No category"
       frequency,
       goal_period: goalPeriod,
-      goal_target: Number(goalTarget) || 0
-    });
-    setTitle("");
-    setCategoryId("");
-    setFrequency("daily");
-    setGoalPeriod("monthly");
-    setGoalTarget(20);
+      goal_target: Number(goalTarget) || 0,
+    })
+
+    // reset
+    setTitle("")
+    setCategoryId(null)
+    setFrequency("daily")
+    setGoalPeriod("monthly")
+    setGoalTarget(20)
   }
 
   return (
@@ -48,14 +57,35 @@ export default function AddHabit({ categories, onAdd }) {
         className="border rounded p-2"
       />
 
-      <div className="flex gap-2">
-        <CategorySelect categories={categories} value={categoryId} onChange={setCategoryId} />
-        <select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
-          {frequencies.map(f => <option key={f} value={f}>{f}</option>)}
+      <div className="flex gap-2 flex-wrap">
+        <CategorySelect
+          categories={categories}
+          value={categoryId}
+          onChange={setCategoryId}
+        />
+
+        <select
+          value={frequency}
+          onChange={(e) => setFrequency(e.target.value)}
+          className="border rounded p-2"
+        >
+          {frequencies.map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
         </select>
 
-        <select value={goalPeriod} onChange={(e) => setGoalPeriod(e.target.value)}>
-          {periods.map(p => <option key={p} value={p}>{p}</option>)}
+        <select
+          value={goalPeriod}
+          onChange={(e) => setGoalPeriod(e.target.value)}
+          className="border rounded p-2"
+        >
+          {periods.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
         </select>
 
         <input
@@ -77,5 +107,5 @@ export default function AddHabit({ categories, onAdd }) {
         Add Habit
       </button>
     </div>
-  );
+  )
 }
