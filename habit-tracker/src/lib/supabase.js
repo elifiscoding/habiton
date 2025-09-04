@@ -6,7 +6,6 @@ export const supabase = createClient(
   { auth: { persistSession: true, autoRefreshToken: true } }
 )
 
-
 /**
  * Calls the SQL function `take_daily_snapshot()` (created earlier in SQL).
  * Safe to call after you log for the day; RLS uses auth.uid().

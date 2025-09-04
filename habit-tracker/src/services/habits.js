@@ -1,4 +1,4 @@
-import { supabase } from "../clients/supabase";
+import { supabase } from "../lib/supabase";
 import { toLocalYMD } from "../utils/dates"
 
 // -------- Categories --------
