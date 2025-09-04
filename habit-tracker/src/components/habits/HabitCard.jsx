@@ -31,7 +31,10 @@ export default function HabitCard({
   const [showCats, setShowCats] = useState(false)
   const [newCat, setNewCat] = useState("")
   const [selectedColor, setSelectedColor] = useState("#10b981")
+  const [showMenu, setShowMenu] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const popRef = useRef(null)
+  const menuRef = useRef(null)
 
   const isDoneToday = useMemo(
     () => recent7.find(d => d.date === today && d.status === "done"),
@@ -136,14 +139,16 @@ export default function HabitCard({
 
   useEffect(() => {
     function onDocClick(e) {
-      if (!showCats) return
-      if (popRef.current && !popRef.current.contains(e.target)) {
+      if (showCats && popRef.current && !popRef.current.contains(e.target)) {
         setShowCats(false)
+      }
+      if (showMenu && menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false)
       }
     }
     document.addEventListener("mousedown", onDocClick)
     return () => document.removeEventListener("mousedown", onDocClick)
-  }, [showCats])
+  }, [showCats, showMenu])
 
   // Close category popover when entering edit mode
   useEffect(() => {
@@ -182,48 +187,20 @@ export default function HabitCard({
   }
 
   return (
-    <Card size="sm" className={clsx(
-      "relative space-y-2 transition",
+    <div className={clsx(
+      "relative bg-gray-100 dark:bg-gray-800 rounded-lg p-0 transition",
       !habit.is_active && "opacity-60",
       flash && "flash-success"
     )}>
-      {/* delete (x) — hover reveal */}
-      <div className="absolute right-1 top-1 group z-10">
-        <div className="h-8 w-8 rounded-md"></div>
-        <button
-          type="button"
-          aria-label="Delete habit"
-          onClick={(e) => { e.stopPropagation(); del() }}
-          className="
-            absolute inset-0 m-auto h-6 w-6
-            rounded-full text-xs grid place-items-center shadow
-            bg-red-500 text-white
-            opacity-0 pointer-events-none
-            transition
-            group-hover:opacity-100 group-hover:pointer-events-auto
-            hover:bg-red-600
-          "
-        >
-          ×
-        </button>
-      </div>
 
-      {/* header / edit */}
-      <div
-        ref={headerRef}
-        className="flex-1 min-w-0 pr-8 cursor-default"
+      {/* Header bar - 10% height with category color */}
+      <div 
+        className="h-10 rounded-t-lg flex items-center justify-between px-3"
+        style={{ backgroundColor: habit.category?.color || "#3b82f6" }}
         onDoubleClick={() => setEditing(true)}
       >
-        <div className="flex items-center gap-2">
-          {/* Toggle is always fixed on the left */}
-          <Button
-            variant="switch"
-            isActive={habit.is_active}
-            title={habit.is_active ? "Pause" : "Resume"}
-            onClick={toggleActive}
-          />
-
-          {/* Editable block: icon + title */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="text-lg">{icon}</span>
           {editing ? (
             <HabitEditor
               habit={habit}
@@ -234,75 +211,114 @@ export default function HabitCard({
               onCancel={() => setEditing(false)}
             />
           ) : (
-            <div className="flex items-center gap-2 flex-1">
-              <span>{icon}</span>
-              <div className="font-semibold text-[13px] truncate">
-                {habit.title}
-              </div>
-              {(() => {
-                const bg = habit.category?.color || "#e5e7eb" // gray-200 fallback
-                const text = "#111827" // neutral readable text
-                return (
-                  <span
-                    className="ml-auto shrink-0 px-2 py-0.5 rounded text-[10px] cursor-pointer border"
-                    style={{ background: bg, color: text, borderColor: "#e5e7eb" }}
-                    title={habit.category?.name || "Set category"}
-                    onDoubleClick={(e) => { e.stopPropagation(); setShowCats(v => !v) }}
-                  >
-                    {habit.category?.name || "Set category"}
-                  </span>
-                )
-              })()}
+            <div className="font-semibold text-white text-sm truncate">
+              {habit.title}
             </div>
           )}
         </div>
-
-        {/* Description always below */}
-        {!editing && habit.description && (
-          <div className="subtle text-sm truncate mt-1">{habit.description}</div>
-        )}
+        <Button
+          variant="switch"
+          isActive={habit.is_active}
+          title={habit.is_active ? "Pause" : "Resume"}
+          onClick={toggleActive}
+        />
       </div>
 
+      {/* Main content area */}
+      <div className="p-3 flex items-center justify-between">
+        {/* Left side content */}
+        <div className="flex-1 space-y-2">
+          {/* Frequency and amount */}
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <span>🕐</span>
+            <span>
+              {habit.goal_frequency || 'daily'} | {habit.goal_amount || 1} {habit.goal_amount_type || 'times'}
+              {habit.goal_frequency === 'weekly' ? '/week' : habit.goal_frequency === 'monthly' ? '/month' : ''}
+            </span>
+          </div>
 
-      {/* metrics */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <CompletionRing
-            pct={stat?.completion_rate_pct ?? 0}
-            count={stat?.done_days ?? 0}
-            size={32}
-            stroke={4}
-          />
-          <Badge>
-            <span aria-hidden>🔥</span>
-            <span>{streaks ? (streaks.streak_current > 0 ? `${streaks.streak_current}d` : "-") : "-"}</span>
-          </Badge>
+          {/* Completion ring and streak */}
+          <div className="flex items-center gap-3">
+            <CompletionRing
+              pct={stat?.completion_rate_pct ?? 0}
+              count={stat?.done_days ?? 0}
+              size={28}
+              stroke={3}
+            />
+            <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+              <span aria-hidden>🔥</span>
+              <span>{streaks ? (streaks.streak_current > 0 ? `${streaks.streak_current}` : "0") : "0"}</span>
+            </Badge>
+          </div>
+
+          {/* Weekly progress */}
+          <div className="flex items-center gap-2 ml-2">
+            <WeekDots items={recent7} />
+          </div>
         </div>
-        <WeekDots items={recent7} />
-      </div>
 
-      {/* Done / Undo */}
-      <div className="flex justify-end gap-2">
-        {!isDoneToday ? (
-          <Button
-            size="sm"
-            variant="success"
-            onClick={() => habit.is_active && markToday(habit.id)}
-            disabled={!habit.is_active}
-            title={habit.is_active ? "Mark as done today" : "This habit is paused"}
-          >
-            ✅ Done
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            variant="warning"
-            onClick={() => undoToday(habit.id)}
-            title="Undo today's completion"
-          >
-            ↩️ Undo
-          </Button>
-        )}
+        {/* Right side - Done button and menu */}
+        <div className="ml-4 flex flex-col items-end gap-2">
+          {!isDoneToday ? (
+            <Button
+              size="md"
+              variant="success"
+              onClick={() => habit.is_active && markToday(habit.id)}
+              disabled={!habit.is_active}
+              title={habit.is_active ? "Mark as done today" : "This habit is paused"}
+              className="h-12 w-12 rounded-lg text-lg"
+            >
+              ✅
+            </Button>
+          ) : (
+            <Button
+              size="md"
+              variant="warning"
+              onClick={() => undoToday(habit.id)}
+              title="Undo today's completion"
+              className="h-12 w-12 rounded-lg text-lg"
+            >
+              ↩️
+            </Button>
+          )}
+          
+          {/* Three dots menu */}
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              title="More options"
+            >
+              ⋯
+            </button>
+            
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-1 w-32 bg-white dark:bg-gray-700 rounded-md shadow-lg border dark:border-gray-600 py-1 z-20">
+                <button
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+                  onClick={() => {
+                    setShowEditModal(true)
+                    setShowMenu(false)
+                  }}
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-red-600 dark:text-red-400"
+                  onClick={() => {
+                    if (confirm(`Delete "${habit.title}"?`)) {
+                      del()
+                    }
+                    setShowMenu(false)
+                  }}
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {showCats && (
@@ -350,6 +366,23 @@ export default function HabitCard({
           </div>
         </div>
       )}
-    </Card>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Edit Habit</h3>
+            <HabitEditor
+              habit={habit}
+              onSave={(changes) => {
+                setShowEditModal(false)
+                onUpdateHabit?.(habit.id, changes)
+              }}
+              onCancel={() => setShowEditModal(false)}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

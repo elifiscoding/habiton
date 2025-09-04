@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [sort, setSort] = useState("created") // created | name | category
   const [categorySort, setCategorySort] = useState("name") // name | count
   const [habitSort, setHabitSort] = useState("created") // created | name
+  const [collapsedCategories, setCollapsedCategories] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [view, setView] = useState("cards")   // ✅ add view state
@@ -140,6 +141,18 @@ export default function Dashboard() {
     })
   }
 
+  const toggleCategory = (categoryName) => {
+    setCollapsedCategories(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(categoryName)) {
+        newSet.delete(categoryName)
+      } else {
+        newSet.add(categoryName)
+      }
+      return newSet
+    })
+  }
+
   return (
     <>
       {/* header bar */}
@@ -224,29 +237,52 @@ export default function Dashboard() {
           <div className="card-s">Loading…</div>
         ) : (
           <section className="space-y-4">
-            {groups.map(([name, items]) => (
-              <div key={name}>
-                <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">{name}</div>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {items.map(h => (
-                    <HabitCard
-                      key={h.id}
-                      habit={h}
-                      stat={byHabit.get(h.id)}
-                      streaks={streakMap.get(h.id)}
-                      onUpdateHabit={updateHabit}
-                      onDeleteHabit={deleteHabit}
-                      onLog={logHabit}
-                      onUpdateHabitStat={updateHabitStat}
-                      onUpdateStreak={updateStreak}
-                      categories={categories}
-                      onCategoryAdded={onCategoryAdded}
-                      reloadCategories={reloadCategories}
-                    />
-                  ))}
+            {groups.map(([name, items]) => {
+              const isCollapsed = collapsedCategories.has(name)
+              const categoryColor = categories.find(c => c.name === name)?.color || "#3b82f6"
+              
+              return (
+                <div key={name} className="relative">
+                  {/* Category header with background */}
+                  <div 
+                    className="relative rounded-lg p-3 mb-2 cursor-pointer"
+                    style={{ backgroundColor: `${categoryColor}20` }}
+                    onClick={() => toggleCategory(name)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                        {name} ({items.length} habits)
+                      </div>
+                      <div className="text-gray-600 dark:text-gray-400">
+                        {isCollapsed ? "▶" : "▼"}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Habits grid */}
+                  {!isCollapsed && (
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {items.map(h => (
+                        <HabitCard
+                          key={h.id}
+                          habit={h}
+                          stat={byHabit.get(h.id)}
+                          streaks={streakMap.get(h.id)}
+                          onUpdateHabit={updateHabit}
+                          onDeleteHabit={deleteHabit}
+                          onLog={logHabit}
+                          onUpdateHabitStat={updateHabitStat}
+                          onUpdateStreak={updateStreak}
+                          categories={categories}
+                          onCategoryAdded={onCategoryAdded}
+                          reloadCategories={reloadCategories}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
             {!filtered.length && (
               <div className="card-s text-gray-600">
                 No habits match “{q}”.

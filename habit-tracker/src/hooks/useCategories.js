@@ -1,12 +1,12 @@
 // src/hooks/useCategories.js
 import { useEffect, useState, useCallback } from "react"
 import {
-  getCategories,
   createCategory,
   updateCategory,
   deleteCategory,
   getCategoryHabitCounts,   // 👈 import service fn
 } from "../services/categories"
+import { categoryCache } from "../services/categoryCache"
 
 export function useCategories() {
   const [categories, setCategories] = useState([])
@@ -14,16 +14,19 @@ export function useCategories() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // load plain categories
+  // load categories and counts in parallel
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await getCategories()
-      setCategories(data)
-
-      const counts = await getCategoryHabitCounts()
-      setCategoryCounts(counts)
+      // Load both in parallel for better performance
+      const [categoriesData, countsData] = await Promise.all([
+        categoryCache.getCategories(),
+        getCategoryHabitCounts()
+      ])
+      
+      setCategories(categoriesData)
+      setCategoryCounts(countsData)
     } catch (err) {
       setError(err.message || "Failed to load categories")
     } finally {
@@ -35,8 +38,8 @@ export function useCategories() {
     load()
   }, [load])
 
-  const addCategory = async (name) => {
-    const cat = await createCategory(name)
+  const addCategory = async (name, color = "#e5e7eb") => {
+    const cat = await categoryCache.createCategory(name, color)
     setCategories((prev) => [...prev, cat])
     // refresh counts
     const counts = await getCategoryHabitCounts()
@@ -49,6 +52,8 @@ export function useCategories() {
     setCategories((prev) =>
       prev.map((c) => (c.id === id ? { ...c, ...cat } : c))
     )
+    // Invalidate cache and refresh counts
+    categoryCache.invalidate()
     const counts = await getCategoryHabitCounts()
     setCategoryCounts(counts)
     return cat
@@ -57,6 +62,8 @@ export function useCategories() {
   const removeCategory = async (id) => {
     await deleteCategory(id)
     setCategories((prev) => prev.filter((c) => c.id !== id))
+    // Invalidate cache and refresh counts
+    categoryCache.invalidate()
     const counts = await getCategoryHabitCounts()
     setCategoryCounts(counts)
     return true

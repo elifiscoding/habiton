@@ -1,5 +1,5 @@
 // src/components/pages/CategoriesPage.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { hierarchy, treemap as d3treemap } from "d3-hierarchy"
 import { useCategories } from "../../hooks/useCategories"
 import { Card, Input, Button } from "../../components/ui"
@@ -59,7 +59,7 @@ export default function CategoriesPage() {
   }, [categoryCounts, categories, search, sort])
 
   // ---- Compute treemap layout whenever data/size changes ----
-  const computeLayout = () => {
+  const computeLayout = useCallback(() => {
     if (!containerRef.current || dataForTreemap.length === 0) {
       setLayout([])
       return
@@ -84,7 +84,7 @@ export default function CategoriesPage() {
       y1: node.y1,
     }))
     setLayout(leaves)
-  }
+  }, [dataForTreemap])
 
   // Initial / data-driven computation
   useEffect(() => {
@@ -92,12 +92,22 @@ export default function CategoriesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataForTreemap])
 
-  // Resize-driven computation
+  // Resize-driven computation with debouncing
   useEffect(() => {
     if (!containerRef.current) return
-    const ro = new ResizeObserver(() => computeLayout())
+    
+    let timeoutId
+    const debouncedCompute = () => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(computeLayout, 100)
+    }
+    
+    const ro = new ResizeObserver(debouncedCompute)
     ro.observe(containerRef.current)
-    return () => ro.disconnect()
+    return () => {
+      ro.disconnect()
+      clearTimeout(timeoutId)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [containerRef.current])
 

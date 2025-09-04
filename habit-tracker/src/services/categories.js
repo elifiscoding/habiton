@@ -22,14 +22,14 @@ export async function getCategories() {
 /**
  * Create a new category
  */
-export async function createCategory(name) {
+export async function createCategory(name, color = "#e5e7eb") {
   const { data: user } = await supabase.auth.getUser()
   const uid = user?.user?.id
   if (!uid) throw new Error("User not authenticated")
 
   const { data, error } = await supabase
     .from("categories")
-    .insert([{ name: name.trim(), user_id: uid }])
+    .insert([{ name: name.trim(), user_id: uid, color }])
     .select()
     .single()
 
